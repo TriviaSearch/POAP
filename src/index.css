@@ -1,0 +1,51 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@600&display=swap");
+@font-face {
+  font-family: "Ponter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/Ponter.ttf);
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+
+  --header-background: #393939;
+  --header-button: #fbfbfb;
+  --header-logo: #536a8c;
+
+  --content-button: #f3f3f3;
+  --content-background: #272727;
+  --content-text: #e7e7e7;
+  --content-block: #424242;
+
+  --content-light: #ffffff;
+  --content-dark: #050d14;
+
+  --border-radius: 16px;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.vkuiGroup--mode-none.vkuiGroup--sizeX-none > .vkuiGroup__inner {
+  background: transparent;
+}
