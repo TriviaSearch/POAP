@@ -1,19 +1,17 @@
-import { ModalRoot } from "@itznevikat/router";
+import { ModalRoot, replace, useLocation } from "@itznevikat/router";
 import { useCallback } from "react";
-import ConnectWalletModal from "./connectWallet";
+import PoapCollectionQRModal from "./poapCollectionQR";
 
 const ModalController = () => {
-  const handleClose = useCallback(() => {
-    console.log("Modal close");
-  }, []);
+  const { pathname } = useLocation();
 
-  const handleClosed = useCallback(() => {
-    console.log("Modal closed");
-  }, []);
+  const handleClose = useCallback(() => {
+    replace(pathname);
+  }, [replace, pathname]);
 
   return (
-    <ModalRoot onClose={handleClose} onClosed={handleClosed}>
-      <ConnectWalletModal nav="connectWallet" />
+    <ModalRoot onClose={handleClose} onClosed={handleClose}>
+      <PoapCollectionQRModal nav="poapCollectionQR" />
     </ModalRoot>
   );
 };

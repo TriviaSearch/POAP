@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { Group, Panel, PanelProps } from "@vkontakte/vkui";
+import { Div, Group, Panel, PanelProps } from "@vkontakte/vkui";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
@@ -10,6 +10,7 @@ import ProfileTitle from "../components/Profile/ProfileTitle";
 import TokenList from "../components/Profile/Tokens/TokenList";
 import User from "../components/Profile/User";
 import Whitelist from "../components/Profile/Whitelist/Whitelist";
+import { Web3Button } from "@web3modal/react";
 
 const Root = styled(Panel)`
   color: var(--content-light);
@@ -44,9 +45,12 @@ const ProfilePanel = ({}: PanelProps) => {
           name={appData.firstName}
           subtitle="4 POAP"
         />
+        <Div>
+          <Web3Button />
+        </Div>
       </BlockGroup>
       <BlockGroup id="cityTop" separator="hide">
-        <CityTop friendsPhotos={friendsPhotos} />
+        <CityTop friendsPhotos={[]} />
       </BlockGroup>
       <BlockGroup
         id="tokens"

@@ -12,6 +12,10 @@ import CurrentMintCard from "../components/CreatorProfile/Cards/CurrentMintCard"
 import BalanceCard from "../components/CreatorProfile/Cards/Balance";
 import { Icon28AddCircleOutline } from "@vkontakte/icons";
 import MintGrid from "../components/CreatorProfile/MintGrid";
+import { useCallback, useMemo } from "react";
+import { push } from "@itznevikat/router";
+import PoapGrid from "../components/CreatorProfile/MintGrid";
+import { getImageUrlFromIpfs } from "../utils/ipfs";
 
 const Root = styled(Panel)`
   color: var(--content-light);
@@ -62,6 +66,18 @@ const AddButton = styled(Button)`
 
 const CreatorProfilePanel = ({}: PanelProps) => {
   const appData = useSelector((state: RootState) => state.app);
+  const poaps = useMemo(() => {
+    return appData.poaps.map((poap) => {
+      return {
+        name: poap.title,
+        image: poap.img,
+      };
+    });
+  }, [appData.poaps]);
+
+  const handleClickAddButton = useCallback(() => {
+    push("/creator/make");
+  }, [push]);
 
   return (
     <Root>
@@ -74,7 +90,7 @@ const CreatorProfilePanel = ({}: PanelProps) => {
       </BlockGroup>
       <BlockGroup id="count" separator="hide">
         <FlexWrapper>
-          <CurrentMintCard issued={cards.issued} left={cards.left} />
+          <CurrentMintCard issued={appData.poaps.length} left={0} />
           <BalanceCard value={cards.balance} />
         </FlexWrapper>
       </BlockGroup>
@@ -83,9 +99,9 @@ const CreatorProfilePanel = ({}: PanelProps) => {
         header={<ProfileTitle>{mints.length} Минт</ProfileTitle>}
         separator="hide"
       >
-        <MintGrid mints={mints} />
+        <PoapGrid poaps={poaps} />
       </BlockGroup>
-      <AddButton size="s">
+      <AddButton size="s" onClick={handleClickAddButton}>
         <Icon28AddCircleOutline />
       </AddButton>
     </Root>

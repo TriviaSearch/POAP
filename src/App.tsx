@@ -1,33 +1,63 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useAdaptivity,
   ViewWidth,
   SplitLayout,
   SplitCol,
+  ScreenSpinner,
 } from "@vkontakte/vkui";
-import { Match, Epic, View, push } from "@itznevikat/router";
-import { setUserData } from "./reducers/app.reducer";
+import {
+  Match,
+  Epic,
+  View,
+  useInitialLocation,
+  replace,
+  matchPopout,
+  useParams,
+} from "@itznevikat/router";
+import appReducer, {
+  setUserData,
+  setPoaps,
+  setCollections,
+} from "./reducers/app.reducer";
 import BottomMenu from "./components/BottomMenu";
 import MapPanel from "./panels/map.panel";
 import ProfilePanel from "./panels/profile.panel";
 import CreatorProfilePanel from "./panels/creatorprofile.panel";
 import bridge from "@vkontakte/vk-bridge";
-import { useDispatch } from "react-redux";
-import { RootDispatch } from "./reducers/store";
+import { useDispatch, useSelector } from "react-redux";
+import { RootDispatch, RootState } from "./reducers/store";
 import ModalController from "./modals";
+import MakePoapPanel from "./panels/makepoap.panel";
+import GetPoapPanel from "./panels/getpoap.panel";
+import { useAccount, useContractRead, useContractReads } from "wagmi";
+import { Snackbar } from "./components/Snackbar";
 
-import { goerli, mainnet, polygon } from "wagmi/chains";
-import { configureChains, createClient, WagmiConfig } from "wagmi";
-import {
-  EthereumClient,
-  modalConnectors,
-  walletConnectProvider,
-} from "@web3modal/ethereum";
-import { Web3Modal } from "@web3modal/react";
+import ABI2 from "./abis/POAPFactoryABI.json";
+import ABI3 from "./abis/VKPOAPABI.json";
+import { getImageUrlFromIpfs, getJsonFromIpfs } from "./utils/ipfs";
+import Svgs from "./components/Svgs";
+import { Web3Button } from "@web3modal/react";
+
+interface Poap {
+  title: string;
+  description: string;
+  timestamp: number;
+  latitude: string;
+  longitude: string;
+  imgLink: string;
+  img?: string;
+}
 
 function App() {
-  const { viewWidth } = useAdaptivity();
+  const { collections, loading } = useSelector((state: RootState) => state.app);
   const dispatch: RootDispatch = useDispatch();
+  const { viewWidth } = useAdaptivity();
+  const initialLocation = useInitialLocation();
+  const { isConnected } = useAccount();
+  const { popout = null } = useParams();
+
+  const [contracts, setContracts] = useState<string[]>([]);
 
   // Проверяем, на десктопе ли мы
   const isDesktop = useMemo(() => {
@@ -35,10 +65,65 @@ function App() {
     return viewWidth >= ViewWidth.SMALL_TABLET;
   }, [viewWidth]);
 
+  // Если мы пришли по ссылке с mint, то переходим на страницу минтинга
+  const mint = initialLocation.hash.match(/mint\/0x([^&]{40})/);
+  if (mint) {
+    setTimeout(() => {
+      replace(`/mint`, {
+        poapCollection: "0x" + mint[1],
+      });
+    }, 200);
+  }
+
+  // Получаем все коллекции
+  useContractRead({
+    address: "0x6bcd17f4933425cd03bc9aea2013373a7e02da7e",
+    abi: ABI2,
+    functionName: "allCollections",
+    chainId: 5,
+    onSettled(data: string[] | undefined, error: Error | null) {
+      if (error) return console.error(error);
+      if (!data) return;
+      dispatch(setCollections(data));
+      console.log("collections", data);
+    },
+  });
+
+  // Получаем все контракты
+  useContractReads({
+    contracts: collections.map((address) => ({
+      abi: ABI3,
+      chainId: 5,
+      functionName: "tokenURI",
+      args: [1],
+      address: `0x${address.substring(2)}`,
+    })),
+    onSettled(data: string[] | undefined, error: Error | null) {
+      if (error) return console.error(error);
+      if (!data) return;
+      setContracts(data);
+      console.log("contracts", data);
+    },
+  });
+
+  // Получаем все POAP
+  useEffect(() => {
+    const poaps = contracts.map(async (contract) => {
+      const ipfsAddress = contract.substring(7, contract.length - 1);
+      const data = await getJsonFromIpfs<Poap>(ipfsAddress);
+      const ipfsImageAddress = data.imgLink.substring(7, contract.length - 1);
+      return { ...data, img: getImageUrlFromIpfs(ipfsImageAddress) };
+    });
+
+    Promise.all(poaps).then((data) => {
+      dispatch(setPoaps(data));
+    });
+  }, [contracts]);
+
   // Попауты
-  const popout = useMemo(() => {
-    return null;
-  }, []);
+  const popoutController = matchPopout(popout, [
+    <ScreenSpinner id="screen-spinner" />,
+  ]);
 
   // Получаем данные пользователя
   useEffect(() => {
@@ -53,52 +138,41 @@ function App() {
     });
   }, []);
 
-  const chains = [goerli, mainnet, polygon];
-
-  const { provider } = configureChains(chains, [
-    walletConnectProvider({ projectId: import.meta.env.VITE_PROJECT_ID }),
-  ]);
-
-  const wagmiClient = createClient({
-    autoConnect: true,
-    connectors: modalConnectors({
-      projectId: import.meta.env.VITE_PROJECT_ID,
-      version: "1",
-      appName: import.meta.env.VITE_PROJECT_NAME,
-      chains,
-    }),
-    provider,
-  });
-
-  const ethereumClient = new EthereumClient(wagmiClient, chains);
-
-  // useEffect(() => {
-  //   push("/?modal=connectWallet");
-  // }, []);
-
-  return (
+  return isConnected ? (
     <>
-      <WagmiConfig client={wagmiClient}>
-        <Match initialURL="/" fallbackURL="/">
-          <SplitLayout modal={<ModalController />} popout={popout}>
-            <SplitCol animate={!isDesktop} width="100%" maxWidth="100%">
-              <Epic id="/" tabbar={<BottomMenu />}>
-                <View id="/">
-                  <MapPanel id="/" />
-                  <ProfilePanel id="/profile" />
-                  <CreatorProfilePanel id="/creatorProfile" />
-                </View>
-              </Epic>
-            </SplitCol>
-          </SplitLayout>
-        </Match>
-      </WagmiConfig>
-
-      <Web3Modal
-        projectId={import.meta.env.VITE_PROJECT_NAME}
-        ethereumClient={ethereumClient}
-      />
+      <Svgs />
+      <Match initialURL="/" disableSetLocation>
+        <SplitLayout modal={<ModalController />} popout={popoutController}>
+          <SplitCol animate={!isDesktop} width="100%" maxWidth="100%">
+            <Epic id="/" tabbar={<BottomMenu />}>
+              <View id="/">
+                <MapPanel id="/" />
+                <ProfilePanel id="/profile" />
+                <GetPoapPanel id="/mint" />
+              </View>
+              <View id="/creator">
+                <CreatorProfilePanel id="/profile" />
+                <MakePoapPanel id="/make" />
+              </View>
+            </Epic>
+          </SplitCol>
+        </SplitLayout>
+      </Match>
+      {/* <Snackbar /> */}
     </>
+  ) : (
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        width: "100vw",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "var(--content-background)",
+      }}
+    >
+      <Web3Button />
+    </div>
   );
 }
 

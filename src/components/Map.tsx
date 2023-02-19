@@ -1,7 +1,9 @@
-import React from "react";
+import { useRef, useEffect } from "react";
 import mmrgl from "mmr-gl";
 import styled from "@emotion/styled";
 import "mmr-gl/dist/mmr-gl.css";
+import { useSelector } from "react-redux";
+import { RootState } from "../reducers/store";
 
 const MapContainer = styled.div`
   width: 100vw;
@@ -9,9 +11,10 @@ const MapContainer = styled.div`
 `;
 
 function Map() {
-  const mapRef = React.useRef<mmrgl.Map>();
+  const appData = useSelector((state: RootState) => state.app);
+  const mapRef = useRef<mmrgl.Map>();
 
-  React.useEffect(() => {
+  useEffect(() => {
     mapRef.current = new mmrgl.Map({
       container: "map",
       zoom: 8,
@@ -27,6 +30,31 @@ function Map() {
       if (mapRef.current) mapRef.current.remove();
     };
   }, []);
+
+  // Добавляем маркеры на карту
+  useEffect(() => {
+    console.log(appData.poaps);
+
+    appData.poaps.forEach((poap) => {
+      const coordinates: [number, number] = [
+        Number(poap.longitude),
+        Number(poap.latitude),
+      ];
+
+      const popup = new mmrgl.Popup({ offset: 25 }).setText(`${poap.title}`);
+
+      const marker = new mmrgl.Marker({
+        element: document.createElement("div"),
+      })
+        .setLngLat(coordinates)
+        .setPopup(popup)
+        .addTo(mapRef.current as mmrgl.Map);
+
+      const element = marker.getElement();
+      element.classList.add("poap-marker");
+      element.style.backgroundImage = `url(${poap.img})`;
+    });
+  }, [appData.poaps]);
 
   return <MapContainer id="map" />;
 }

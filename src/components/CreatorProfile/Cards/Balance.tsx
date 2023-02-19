@@ -25,8 +25,8 @@ const Title = styled.h3`
 `;
 
 const Image = styled.img`
-  width: 24px;
-  height: 24px;
+  width: auto;
+  height: 28px;
 `;
 
 type BalanceCardProps = {

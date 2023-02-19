@@ -45,9 +45,9 @@ export default function BottomMenu() {
       </TabbarItemStyled>
       <TabbarItemStyled
         onClick={() => {
-          push("/creatorProfile");
+          push("/creator/profile");
         }}
-        selected={panel === "/creatorProfile"}
+        selected={panel === "/creator/profile"}
       >
         {panel === "/creatorProfile" ? <Icon24Flash /> : <Icon24FlashOutline />}
       </TabbarItemStyled>

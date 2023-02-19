@@ -19,7 +19,7 @@ export const Whitelist = ({}: TokenProps) => {
   return (
     <>
       {list.map((item) => (
-        <WhitelistItem />
+        <WhitelistItem key={item.id} />
       ))}
     </>
   );

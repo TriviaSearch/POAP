@@ -6,13 +6,13 @@ const Grid = styled.div`
   gap: 16px;
 `;
 
-const MintCardImage = styled.img`
+const PoapCardImage = styled.img`
   width: 100%;
   height: auto;
   border-radius: var(--border-radius);
 `;
 
-const MintCardName = styled.div`
+const PoapCardName = styled.div`
   font-family: "Montserrat Alternates";
   font-style: normal;
   font-weight: 500;
@@ -21,27 +21,27 @@ const MintCardName = styled.div`
   letter-spacing: 0.045em;
 `;
 
-const MintCard = ({ mint }: any) => {
+const PoapCard = ({ poap }: any) => {
   return (
     <div>
-      <MintCardImage src={mint.image} />
-      <MintCardName>{mint.name}</MintCardName>
+      <PoapCardImage src={poap.image} />
+      <PoapCardName>{poap.name}</PoapCardName>
     </div>
   );
 };
 
-type MintGridProps = {
-  mints: any[];
+type PoapGridProps = {
+  poaps: any[];
 };
 
-const MintGrid = ({ mints }: MintGridProps) => {
+const PoapGrid = ({ poaps }: PoapGridProps) => {
   return (
     <Grid>
-      {mints.map((mint) => (
-        <MintCard key={mint.id} mint={mint} />
+      {poaps.map((poap) => (
+        <PoapCard key={poap.id} poap={poap} />
       ))}
     </Grid>
   );
 };
 
-export default MintGrid;
+export default PoapGrid;

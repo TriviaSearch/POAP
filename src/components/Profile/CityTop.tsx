@@ -74,11 +74,11 @@ const CityTop = ({ friendsPhotos }: CityTopProps) => {
     <Root>
       <PlacesCounter>15 мест</PlacesCounter>
       <Title>Топ городов</Title>
-      <City>Москва</City>
+      <City>Санкт-Петербург</City>
       <FriendsView>
         <UsersStack size="s" photos={friendsPhotos} />
         <FriendsCaption>
-          {friendsPhotos.length} друга были в тех же местах
+          {friendsPhotos.length} друзей были в тех же местах
         </FriendsCaption>
       </FriendsView>
     </Root>

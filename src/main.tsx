@@ -9,25 +9,26 @@ import App from "./App";
 
 import "@vkontakte/vkui/dist/vkui.css";
 import "./index.css";
+import WagmiProvider from "./components/WagmiProvider";
 
 // Обязательно нужно инициализировать bridge
 bridge.send("VKWebAppInit", {});
 
 // Инициализация eruda для дебага на мобильных устройствах
-if (import.meta.env.MODE !== "production") {
-  const element = document.createElement("div");
-  document.body.appendChild(element);
-  eruda.init({ container: element });
-}
+const element = document.createElement("div");
+document.body.appendChild(element);
+eruda.init({ container: element });
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <Provider store={store}>
-    <ConfigProvider>
-      <AdaptivityProvider>
-        <AppRoot>
-          <App />
-        </AppRoot>
-      </AdaptivityProvider>
-    </ConfigProvider>
-  </Provider>
+  <WagmiProvider>
+    <Provider store={store}>
+      <ConfigProvider>
+        <AdaptivityProvider>
+          <AppRoot>
+            <App />
+          </AppRoot>
+        </AdaptivityProvider>
+      </ConfigProvider>
+    </Provider>
+  </WagmiProvider>
 );
