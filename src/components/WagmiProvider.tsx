@@ -1,17 +1,20 @@
-import { goerli, mainnet, polygon } from "wagmi/chains";
+import { goerli } from "wagmi/chains";
 import { configureChains, createClient, WagmiConfig } from "wagmi";
 import {
   EthereumClient,
   modalConnectors,
   walletConnectProvider,
 } from "@web3modal/ethereum";
-import { Web3Modal } from "@web3modal/react";
+import { useWeb3Modal, Web3Modal } from "@web3modal/react";
 
 type WagmiProviderProps = {
   children: React.ReactNode;
 };
 
 const WagmiProvider = ({ children }: WagmiProviderProps) => {
+  const { setDefaultChain } = useWeb3Modal();
+  setDefaultChain(goerli);
+
   const chains = [goerli];
 
   const { provider } = configureChains(chains, [

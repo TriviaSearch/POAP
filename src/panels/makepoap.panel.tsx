@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { Icon24Camera } from "@vkontakte/icons";
+import { Icon20CheckCircleFillGreen, Icon24Camera } from "@vkontakte/icons";
 import {
   FormItem,
   FormLayout,
@@ -15,7 +15,7 @@ import {
   usePlatform,
   Platform,
 } from "@vkontakte/vkui";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import places from "../mockups/places";
 import { sendToIpfs } from "../utils/ipfs";
 import axios from "axios";
@@ -24,7 +24,7 @@ import { signTypedData, waitForTransaction } from "@wagmi/core";
 import { BigNumber } from "@ethersproject/bignumber";
 import { push, replace } from "@itznevikat/router";
 import { useDispatch } from "react-redux";
-import { setLoading, setSnackbar } from "../reducers/app.reducer";
+import { setSnackbar } from "../reducers/app.reducer";
 
 const Root = styled(Panel)`
   color: var(--content-light);
@@ -48,19 +48,31 @@ const Image = styled.img`
 const MakePoapPanel = ({}: PanelProps) => {
   const dispatch = useDispatch();
   const platform = usePlatform();
-  const [gasValue, setGasValue] = useState("classic");
   const imageRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLInputElement>(null);
   const coordinatesRef = useRef<HTMLSelectElement>(null);
   const tokenCountRef = useRef<HTMLInputElement>(null);
 
-  const handleSegmentChange = useCallback(
-    (segmentValue: SegmentedControlValue) => {
-      setGasValue(segmentValue as string);
-    },
-    [setGasValue]
-  );
+  const [isAllFieldsFilled, setIsAllFieldsFilled] = useState(false);
+  const [isPhotoUploaded, setIsPhotoUploaded] = useState(false);
+
+  const handleInputChange = useCallback(() => {
+    if (imageRef.current?.files?.length === 1) setIsPhotoUploaded(true);
+    else setIsPhotoUploaded(false);
+
+    if (
+      imageRef.current?.files?.length === 1 &&
+      titleRef.current?.value &&
+      descriptionRef.current?.value &&
+      coordinatesRef.current?.value &&
+      tokenCountRef.current?.value
+    ) {
+      setIsAllFieldsFilled(true);
+    } else {
+      setIsAllFieldsFilled(false);
+    }
+  }, [imageRef, titleRef, descriptionRef, coordinatesRef, tokenCountRef]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
@@ -85,14 +97,7 @@ const MakePoapPanel = ({}: PanelProps) => {
       const file = imageRef.current.files[0];
       requestImage(file);
     },
-    [
-      imageRef,
-      gasValue,
-      titleRef,
-      descriptionRef,
-      coordinatesRef,
-      tokenCountRef,
-    ]
+    [imageRef, titleRef, descriptionRef, coordinatesRef, tokenCountRef]
   );
 
   function requestImage(file: File) {
@@ -180,26 +185,22 @@ const MakePoapPanel = ({}: PanelProps) => {
     let hash = "";
 
     // Отправляем POAP на сервер и получаем адрес контракта
-    if (gasValue === "classic") {
-      // classic
-    } else {
-      const withoutGasData = JSON.stringify({
-        POAPData: {
-          name: titleRef.current?.value,
-          BaseURI: `ipfs://${poapCid}/`,
-          maxLimit: parseInt(tokenCountRef.current.value),
-        },
-        POAPSignature: signature,
-      });
+    const withoutGasData = JSON.stringify({
+      POAPData: {
+        name: titleRef.current?.value,
+        BaseURI: `ipfs://${poapCid}/`,
+        maxLimit: parseInt(tokenCountRef.current.value),
+      },
+      POAPSignature: signature,
+    });
 
-      const request = await axios.post(
-        "https://opcall.xyz:9998/createGasLessPOAP/",
-        withoutGasData,
-        { headers: { "Content-Type": "application/json" }, timeout: 9999999999 }
-      );
+    const request = await axios.post(
+      "https://opcall.xyz:9998/createGasLessPOAP/",
+      withoutGasData,
+      { headers: { "Content-Type": "application/json" }, timeout: 9999999999 }
+    );
 
-      hash = request.data;
-    }
+    hash = request.data;
 
     const receipt = await waitForTransaction({
       chainId: 5,
@@ -221,44 +222,40 @@ const MakePoapPanel = ({}: PanelProps) => {
     <Root>
       <Image src="/imgs/mint.svg" alt="Mint" />
       <FormLayout onSubmit={handleSubmit}>
-        <FormLayoutGroup mode="horizontal" removable>
-          <FormItem top="Загрузите изображение">
-            <File
-              before={<Icon24Camera role="presentation" />}
-              size="m"
-              getRef={imageRef}
-            >
-              Открыть галерею
-            </File>
-          </FormItem>
-          <FormItem top="Загрузите изображение">
-            <SegmentedControl
-              size="m"
-              options={[
-                {
-                  label: "Классический",
-                  value: "classic",
-                },
-                {
-                  label: "Без газа",
-                  value: "withoutGas",
-                },
-              ]}
-              onChange={handleSegmentChange}
-            />
-          </FormItem>
-        </FormLayoutGroup>
+        <FormItem top="Загрузите изображение">
+          <File
+            before={<Icon24Camera role="presentation" />}
+            size="m"
+            accept="image/*"
+            getRef={imageRef}
+            onInput={handleInputChange}
+            after={isPhotoUploaded && <Icon20CheckCircleFillGreen />}
+          >
+            Открыть галерею
+          </File>
+        </FormItem>
         <FormItem top="Дайте имя коллекции">
-          <Input type="text" id="Title" getRef={titleRef} />
+          <Input
+            type="text"
+            id="Title"
+            getRef={titleRef}
+            onInput={handleInputChange}
+          />
         </FormItem>
         <FormItem top="Краткое описание">
-          <Input type="text" id="Description" getRef={descriptionRef} />
+          <Input
+            type="text"
+            id="Description"
+            getRef={descriptionRef}
+            onInput={handleInputChange}
+          />
         </FormItem>
         <FormItem top="Геолокация события">
           <NativeSelect
             placeholder="Не выбрана"
             id="Coordinates"
             getRef={coordinatesRef}
+            onInput={handleInputChange}
           >
             {places.map((place) => (
               <option value={place.value}>{place.label}</option>
@@ -266,10 +263,19 @@ const MakePoapPanel = ({}: PanelProps) => {
           </NativeSelect>
         </FormItem>
         <FormItem top="Количество токенов">
-          <Input type="text" getRef={tokenCountRef} />
+          <Input
+            type="text"
+            getRef={tokenCountRef}
+            onInput={handleInputChange}
+          />
         </FormItem>
         <FormItem>
-          <Button size="l" stretched type="submit">
+          <Button
+            size="l"
+            stretched
+            type="submit"
+            disabled={!isAllFieldsFilled}
+          >
             Создать
           </Button>
         </FormItem>

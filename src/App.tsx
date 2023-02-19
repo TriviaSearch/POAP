@@ -14,6 +14,7 @@ import {
   replace,
   matchPopout,
   useParams,
+  push,
 } from "@itznevikat/router";
 import appReducer, {
   setUserData,
@@ -59,6 +60,13 @@ function App() {
 
   const [contracts, setContracts] = useState<string[]>([]);
 
+  // Ставим лоадер, пока не получим все коллекции
+  useEffect(() => {
+    setTimeout(() => {
+      push("?popout=screen-spinner");
+    }, 200);
+  }, []);
+
   // Проверяем, на десктопе ли мы
   const isDesktop = useMemo(() => {
     if (!viewWidth) return false;
@@ -101,8 +109,9 @@ function App() {
     onSettled(data: string[] | undefined, error: Error | null) {
       if (error) return console.error(error);
       if (!data) return;
-      setContracts(data);
-      console.log("contracts", data);
+      const filteredData = data.filter((contract) => contract !== "BASEURI");
+      setContracts(filteredData);
+      console.log("contracts", filteredData);
     },
   });
 
@@ -116,6 +125,7 @@ function App() {
     });
 
     Promise.all(poaps).then((data) => {
+      push("?popout=");
       dispatch(setPoaps(data));
     });
   }, [contracts]);
